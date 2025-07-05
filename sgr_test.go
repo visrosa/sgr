@@ -12,9 +12,7 @@ func TestBoldStruct(t *testing.T) {
 	if Bold.Off.Apply() != "\x1b[22m" {
 		t.Errorf("Bold.Off.Apply() = %q, want %q", Bold.Off.Apply(), "\x1b[22m")
 	}
-	if Bold.Apply().Apply() != Bold.On.Apply() {
-		t.Errorf("Bold.Apply() = %q, want %q", Bold.Apply().Apply(), Bold.On.Apply())
-	}
+
 }
 
 func TestUnderlineStruct(t *testing.T) {
@@ -24,9 +22,7 @@ func TestUnderlineStruct(t *testing.T) {
 	if Underline.Off.Apply() != "\x1b[24m" {
 		t.Errorf("Underline.Off.Apply() = %q, want %q", Underline.Off.Apply(), "\x1b[24m")
 	}
-	if Underline.Apply().Apply() != Underline.On.Apply() {
-		t.Errorf("Underline.Apply() = %q, want %q", Underline.Apply().Apply(), Underline.On.Apply())
-	}
+
 }
 
 func TestBlinkStruct(t *testing.T) {
@@ -39,9 +35,7 @@ func TestBlinkStruct(t *testing.T) {
 	if Blink.Off.Apply() != "\x1b[25m" {
 		t.Errorf("Blink.Off.Apply() = %q, want %q", Blink.Off.Apply(), "\x1b[25m")
 	}
-	if Blink.Apply().Apply() != Blink.Slow.Apply() {
-		t.Errorf("Blink.Apply() = %q, want %q", Blink.Apply().Apply(), Blink.Slow.Apply())
-	}
+
 }
 
 func TestFgBgColorHelpers(t *testing.T) {

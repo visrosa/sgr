@@ -18,11 +18,16 @@ func (a AnsiCode) Apply() string {
 }
 
 func (a AnsiCode) Render() string {
-	return fmt.Sprintf("% 3s ", a.Code) + CSI(a.Code) + a.Abbr + string(a.Symbol) + a.Name + Reset.Apply()
+	return fmt.Sprintf(a.Code + CSI(a.Code) + a.Abbr + string(a.Symbol) + a.Name + Reset.Apply())
 }
 
+// Prepends contextual Control Sequence Introducer commands to an AnsiCode
 func CSI(s ...string) string {
 	switch s[0] {
+	// For options of the form `CSI <n> ac`
+	case "A", "B", "C", "D", "E", "F", "G":
+		return "\x1b\x5b" + s[1] + s[0]
+	// Options of the form `CSI ac;5;<n>m`
 	case "38", "48": //Set foreground/background.
 		return "\x1b\x5b" + s[0] + ";5;" + s[1] + "m"
 	default:
@@ -44,14 +49,68 @@ var (
 	CR  = AnsiCode{"\x0D", "CR", "", 0}
 	ESC = AnsiCode{"\x1B", "ESC", "", 0}
 
-	ResetBold       = AnsiCode{"21", "ResetBold", "", 0}
-	ResetDim        = AnsiCode{"22", "ResetDim", "", 0}
-	ResetItalic     = AnsiCode{"23", "ResetItalic", "", 0}
-	ResetUnderline  = AnsiCode{"24", "ResetUnderline", "", 0}
-	ResetBlink      = AnsiCode{"25", "ResetBlink", "", 0}
-	ResetReverse    = AnsiCode{"27", "ResetReverse", "", 0}
-	ResetHidden     = AnsiCode{"28", "ResetHidden", "", 0}
-	ResetStrike     = AnsiCode{"29", "ResetStrike", "", 0}
+	Cursor = struct{ Up, Down, Forward, Back, NextLine, PrevLine, Column, Position, Save, Restore, Hide, Show AnsiCode }{
+		Up:       AnsiCode{"A", "CursorUp", "", 0},
+		Down:     AnsiCode{"B", "CursorDown", "", 0},
+		Forward:  AnsiCode{"C", "CursorForward", "", 0},
+		Back:     AnsiCode{"D", "CursorBack", "", 0},
+		NextLine: AnsiCode{"E", "CursorNextLine", "", 0},
+		PrevLine: AnsiCode{"F", "CursorPrevLine", "", 0},
+		Column:   AnsiCode{"G", "CursorColumn", "", 0},
+		Position: AnsiCode{"H", "CursorPosition", "", 0},
+		Save:     AnsiCode{"s", "SaveCursor", "SCP, SCOSC", 0},
+		Restore:  AnsiCode{"?u", "RestoreCursor", "RCP, SCORC", 0},
+		Hide:     AnsiCode{"?25l", "HideCursor", "DECTCEM", 0},
+		Show:     AnsiCode{"?25h", "ShowCursor", "DECTCEM", 0},
+	}
+
+	Bold = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"1", "Bold", "", 0},
+		Off: AnsiCode{"22", "ResetBold", "", 0},
+	}
+	KittyResetBold = AnsiCode{"221", "ResetBold", "", 0}
+	KittyResetDim  = AnsiCode{"222", "ResetDim", "", 0}
+
+	Dim = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"2", "Dim", "", 0},
+		Off: AnsiCode{"22", "ResetDim", "", 0},
+	}
+	Italic = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"3", "Italic", "", 0},
+		Off: AnsiCode{"23", "ResetItalic", "", 0},
+	}
+	Underline = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"4", "Underline", "", 0},
+		Off: AnsiCode{"24", "ResetUnderline", "", 0},
+	}
+	Blink = struct{ Slow, Rapid, Off AnsiCode }{
+		Slow:  AnsiCode{"5", "BlinkSlow", "", 0},
+		Rapid: AnsiCode{"6", "BlinkRapid", "", 0},
+		Off:   AnsiCode{"25", "ResetBlink", "", 0},
+	}
+	Reverse = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"7", "Reverse", "", 0},
+		Off: AnsiCode{"27", "ResetReverse", "", 0},
+	}
+	Hidden = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"8", "Hidden", "", 0},
+		Off: AnsiCode{"28", "ResetHidden", "", 0},
+	}
+	Strike = struct{ On, Off AnsiCode }{
+		On:  AnsiCode{"9", "Strike", "", 0},
+		Off: AnsiCode{"29", "ResetStrike", "", 0},
+	}
+	DefaultFont      = AnsiCode{"10", "Default Font", "", 0}
+	AlternativeFont1 = AnsiCode{"11", "Default Font", "", 0}
+	AlternativeFont2 = AnsiCode{"12", "Default Font", "", 0}
+	AlternativeFont3 = AnsiCode{"13", "Default Font", "", 0}
+	AlternativeFont4 = AnsiCode{"14", "Default Font", "", 0}
+	AlternativeFont5 = AnsiCode{"15", "Default Font", "", 0}
+	AlternativeFont6 = AnsiCode{"16", "Default Font", "", 0}
+	AlternativeFont7 = AnsiCode{"17", "Default Font", "", 0}
+	AlternativeFont8 = AnsiCode{"18", "Default Font", "", 0}
+	AlternativeFont9 = AnsiCode{"19", "Default Font", "", 0}
+
 	FgBlack         = AnsiCode{"30", "FgBlack", "", 0}
 	FgRed           = AnsiCode{"31", "FgRed", "", 0}
 	FgGreen         = AnsiCode{"32", "FgGreen", "", 0}
@@ -88,135 +147,14 @@ var (
 	BgBrightMagenta = AnsiCode{"105", "BgBrightMagenta", "", 0}
 	BgBrightCyan    = AnsiCode{"106", "BgBrightCyan", "", 0}
 	BgBrightWhite   = AnsiCode{"107", "BgBrightWhite", "", 0}
+
+	ReportingFocus = struct{ Enable, Disable AnsiCode }{
+		Enable:  AnsiCode{"?1004h", "Enable Reporting Focus", "", 0},
+		Disable: AnsiCode{"?1004l", "Disable Reporting Focus", "", 0}}
 )
 
 // SGR and control code helpers for terminal UI
 // Usage: sgr.Bold(), sgr.Bold("off"), sgr.Underline(), sgr.Underline("off"), sgr.Fg(5), sgr.Bg(54), sgr.FgRGB(255,0,0), sgr.BgRGB(0,255,0), etc.
-
-var Bold = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"1", "Bold", "", 0},
-	Off: AnsiCode{"22", "ResetBold", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"1", "Bold", "", 0}
-		}
-		return AnsiCode{"22", "ResetBold", "", 0}
-	},
-}
-
-var Dim = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"2", "Dim", "", 0},
-	Off: AnsiCode{"22", "ResetDim", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"2", "Dim", "", 0}
-		}
-		return AnsiCode{"22", "ResetDim", "", 0}
-	},
-}
-
-var Italic = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"3", "Italic", "", 0},
-	Off: AnsiCode{"23", "ResetItalic", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"3", "Italic", "", 0}
-		}
-		return AnsiCode{"23", "ResetItalic", "", 0}
-	},
-}
-
-var Underline = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"4", "Underline", "", 0},
-	Off: AnsiCode{"24", "ResetUnderline", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"4", "Underline", "", 0}
-		}
-		return AnsiCode{"24", "ResetUnderline", "", 0}
-	},
-}
-
-var Blink = struct {
-	Slow  AnsiCode
-	Rapid AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	Slow:  AnsiCode{"5", "BlinkSlow", "", 0},
-	Rapid: AnsiCode{"6", "BlinkRapid", "", 0},
-	Off:   AnsiCode{"25", "ResetBlink", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" || args[0] == "slow" {
-			return AnsiCode{"5", "BlinkSlow", "", 0}
-		}
-		if args[0] == "rapid" {
-			return AnsiCode{"6", "BlinkRapid", "", 0}
-		}
-		return AnsiCode{"25", "ResetBlink", "", 0}
-	},
-}
-
-var Reverse = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"7", "Reverse", "", 0},
-	Off: AnsiCode{"27", "ResetReverse", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"7", "Reverse", "", 0}
-		}
-		return AnsiCode{"27", "ResetReverse", "", 0}
-	},
-}
-
-var Hidden = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"8", "Hidden", "", 0},
-	Off: AnsiCode{"28", "ResetHidden", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"8", "Hidden", "", 0}
-		}
-		return AnsiCode{"28", "ResetHidden", "", 0}
-	},
-}
-
-var Strike = struct {
-	On    AnsiCode
-	Off   AnsiCode
-	Apply func(args ...string) AnsiCode
-}{
-	On:  AnsiCode{"9", "Strike", "", 0},
-	Off: AnsiCode{"29", "ResetStrike", "", 0},
-	Apply: func(args ...string) AnsiCode {
-		if len(args) == 0 || args[0] == "on" {
-			return AnsiCode{"9", "Strike", "", 0}
-		}
-		return AnsiCode{"29", "ResetStrike", "", 0}
-	},
-}
 
 // Color helpers
 var Fg = struct {
@@ -251,35 +189,17 @@ var Bg = struct {
 }
 
 // --- Cursor and screen control as struct-based helpers ---
-var Cursor = struct {
-	Up       func(n int) AnsiCode
-	Down     func(n int) AnsiCode
-	Forward  func(n int) AnsiCode
-	Back     func(n int) AnsiCode
-	NextLine func(n int) AnsiCode
-	PrevLine func(n int) AnsiCode
-	Column   func(n int) AnsiCode
-	Position func(row, col int) AnsiCode
-	Save     AnsiCode
-	Restore  AnsiCode
-	Hide     AnsiCode
-	Show     AnsiCode
-}{
-	Up:       func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dA", n), "CursorUp", "", 0} },
-	Down:     func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dB", n), "CursorDown", "", 0} },
-	Forward:  func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dC", n), "CursorForward", "", 0} },
-	Back:     func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dD", n), "CursorBack", "", 0} },
-	NextLine: func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dE", n), "CursorNextLine", "", 0} },
-	PrevLine: func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dF", n), "CursorPrevLine", "", 0} },
-	Column:   func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dG", n), "CursorColumn", "", 0} },
-	Position: func(row, col int) AnsiCode {
-		return AnsiCode{fmt.Sprintf("\x1b[%d;%dH", row, col), "CursorPosition", "", 0}
-	},
-	Save:    AnsiCode{"\x1b[s", "SaveCursor", "", 0},
-	Restore: AnsiCode{"\x1b[u", "RestoreCursor", "", 0},
-	Hide:    AnsiCode{"\x1b[?25l", "HideCursor", "", 0},
-	Show:    AnsiCode{"\x1b[?25h", "ShowCursor", "", 0},
-}
+
+// Up:       func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dA", n), "CursorUp", "", 0} },
+// Down:     func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dB", n), "CursorDown", "", 0} },
+// Forward:  func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dC", n), "CursorForward", "", 0} },
+// Back:     func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dD", n), "CursorBack", "", 0} },
+// NextLine: func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dE", n), "CursorNextLine", "", 0} },
+// PrevLine: func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dF", n), "CursorPrevLine", "", 0} },
+// Column:   func(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dG", n), "CursorColumn", "", 0} },
+// Position: func(row, col int) AnsiCode {
+// 	return AnsiCode{fmt.Sprintf("\x1b[%d;%dH", row, col), "CursorPosition", "", 0}
+// },
 
 // --- Erase/clear helpers as AnsiCode factories ---
 func EraseDisplay(n int) AnsiCode { return AnsiCode{fmt.Sprintf("\x1b[%dJ", n), "EraseDisplay", "", 0} }
