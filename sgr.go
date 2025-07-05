@@ -24,12 +24,23 @@ func (a AnsiCode) Render() string {
 // Prepends contextual Control Sequence Introducer commands to an AnsiCode
 func CSI(s ...string) string {
 	switch s[0] {
-	// For options of the form `CSI <n> ac`
+
 	case "A", "B", "C", "D", "E", "F", "G":
+		// For options of the form `CSI <n> ac`
 		return "\x1b\x5b" + s[1] + s[0]
-	// Options of the form `CSI ac;5;<n>m`
+
+	case "66":
+		// Kitty text sizing protocol:`CSI] 66; metadata; text \x07`
+		// Note it uses ] (0x5d)  and not [ (0x5b) after CSI
+		if s[1] == "off" || s[1] == "false" {
+			return "\x07"
+		}
+		return "\x1b\x5d" + s[0] + ";" + s[1] + ";" + s[2]
+
 	case "38", "48": //Set foreground/background.
+		// Options of the form `CSI ac;5;<n>m`
 		return "\x1b\x5b" + s[0] + ";5;" + s[1] + "m"
+
 	default:
 		return "\x1b\x5b" + strings.Join(s, ";") + "m"
 	}
@@ -111,26 +122,36 @@ var (
 	AlternativeFont8 = AnsiCode{"18", "Default Font", "", 0}
 	AlternativeFont9 = AnsiCode{"19", "Default Font", "", 0}
 
-	FgBlack         = AnsiCode{"30", "FgBlack", "", 0}
-	FgRed           = AnsiCode{"31", "FgRed", "", 0}
-	FgGreen         = AnsiCode{"32", "FgGreen", "", 0}
-	FgYellow        = AnsiCode{"33", "FgYellow", "", 0}
-	FgBlue          = AnsiCode{"34", "FgBlue", "", 0}
-	FgMagenta       = AnsiCode{"35", "FgMagenta", "", 0}
-	FgCyan          = AnsiCode{"36", "FgCyan", "", 0}
-	FgWhite         = AnsiCode{"37", "FgWhite", "", 0}
-	FgDefault       = AnsiCode{"39", "FgDefault", "", 0}
-	SetForeground   = AnsiCode{"38", "SetForeground", "", 0}
-	BgBlack         = AnsiCode{"40", "BgBlack", "", 0}
-	BgRed           = AnsiCode{"41", "BgRed", "", 0}
-	BgGreen         = AnsiCode{"42", "BgGreen", "", 0}
-	BgYellow        = AnsiCode{"43", "BgYellow", "", 0}
-	BgBlue          = AnsiCode{"44", "BgBlue", "", 0}
-	BgMagenta       = AnsiCode{"45", "BgMagenta", "", 0}
-	BgCyan          = AnsiCode{"46", "BgCyan", "", 0}
-	BgWhite         = AnsiCode{"47", "BgWhite", "", 0}
-	BgDefault       = AnsiCode{"49", "BgDefault", "", 0}
-	SetBackground   = AnsiCode{"48", "SetBackground", "", 0}
+	FgBlack       = AnsiCode{"30", "FgBlack", "", 0}
+	FgRed         = AnsiCode{"31", "FgRed", "", 0}
+	FgGreen       = AnsiCode{"32", "FgGreen", "", 0}
+	FgYellow      = AnsiCode{"33", "FgYellow", "", 0}
+	FgBlue        = AnsiCode{"34", "FgBlue", "", 0}
+	FgMagenta     = AnsiCode{"35", "FgMagenta", "", 0}
+	FgCyan        = AnsiCode{"36", "FgCyan", "", 0}
+	FgWhite       = AnsiCode{"37", "FgWhite", "", 0}
+	FgDefault     = AnsiCode{"39", "FgDefault", "", 0}
+	SetForeground = AnsiCode{"38", "SetForeground", "", 0}
+	BgBlack       = AnsiCode{"40", "BgBlack", "", 0}
+	BgRed         = AnsiCode{"41", "BgRed", "", 0}
+	BgGreen       = AnsiCode{"42", "BgGreen", "", 0}
+	BgYellow      = AnsiCode{"43", "BgYellow", "", 0}
+	BgBlue        = AnsiCode{"44", "BgBlue", "", 0}
+	BgMagenta     = AnsiCode{"45", "BgMagenta", "", 0}
+	BgCyan        = AnsiCode{"46", "BgCyan", "", 0}
+	BgWhite       = AnsiCode{"47", "BgWhite", "", 0}
+	BgDefault     = AnsiCode{"49", "BgDefault", "", 0}
+	SetBackground = AnsiCode{"48", "SetBackground", "", 0}
+
+	TextSize = AnsiCode{"66", "Text Sizing Protocol (kitty)", "", 0}
+
+	// func(size any) string {
+	// if size == "off" {
+	// 	return "\x07"
+	// }
+	// return fmt.Sprintf("\x1b]66;s=%v;", size)
+	// }
+
 	FgBrightBlack   = AnsiCode{"90", "FgBrightBlack", "", 0}
 	FgBrightRed     = AnsiCode{"91", "FgBrightRed", "", 0}
 	FgBrightGreen   = AnsiCode{"92", "FgBrightGreen", "", 0}
@@ -167,13 +188,6 @@ var Fg = struct {
 	RGB: func(r, g, b int) AnsiCode {
 		return AnsiCode{fmt.Sprintf("38;2;%d;%d;%d", r, g, b), fmt.Sprintf("FgRGB(%d,%d,%d)", r, g, b), "", 0}
 	},
-}
-
-var TextSize = func(size any) string {
-	if size == "off" {
-		return "\x07"
-	}
-	return fmt.Sprintf("\x1b]66;s=%v;", size)
 }
 
 var Bg = struct {
