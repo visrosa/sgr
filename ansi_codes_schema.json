@@ -3,7 +3,6 @@ package sgr
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -113,22 +112,22 @@ func CSI(s ...string) string {
 var (
 	// These will be populated from the registry
 	Reset AnsiCode
-
+	
 	// C0 control codes
 	NUL, BEL, BS, HT, LF, VT, FF, CR, ESC AnsiCode
-
+	
 	// SGR codes
 	Bold, Dim, Italic, Underline AnsiCode
-
+	
 	// Colors
 	FgBlack, FgRed, FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite AnsiCode
 	BgBlack, BgRed, BgGreen, BgYellow, BgBlue, BgMagenta, BgCyan, BgWhite AnsiCode
-	FgDefault, BgDefault                                                  AnsiCode
-
+	FgDefault, BgDefault AnsiCode
+	
 	// Bright colors
-	FgBrightBlack, FgBrightRed, FgBrightGreen, FgBrightYellow  AnsiCode
+	FgBrightBlack, FgBrightRed, FgBrightGreen, FgBrightYellow AnsiCode
 	FgBrightBlue, FgBrightMagenta, FgBrightCyan, FgBrightWhite AnsiCode
-	BgBrightBlack, BgBrightRed, BgBrightGreen, BgBrightYellow  AnsiCode
+	BgBrightBlack, BgBrightRed, BgBrightGreen, BgBrightYellow AnsiCode
 	BgBrightBlue, BgBrightMagenta, BgBrightCyan, BgBrightWhite AnsiCode
 )
 
@@ -137,11 +136,11 @@ func initCodes() {
 	if registry == nil {
 		return
 	}
-
+	
 	// Map registry codes to variables
 	codeMap := map[string]*AnsiCode{
 		"reset": &Reset,
-		"nul":   &NUL, "bel": &BEL, "bs": &BS, "ht": &HT, "lf": &LF,
+		"nul": &NUL, "bel": &BEL, "bs": &BS, "ht": &HT, "lf": &LF,
 		"vt": &VT, "ff": &FF, "cr": &CR, "esc": &ESC,
 		"bold": &Bold, "dim": &Dim, "italic": &Italic, "underline": &Underline,
 		"fg_black": &FgBlack, "fg_red": &FgRed, "fg_green": &FgGreen, "fg_yellow": &FgYellow,
@@ -158,7 +157,7 @@ func initCodes() {
 		"bg_bright_blue": &BgBrightBlue, "bg_bright_magenta": &BgBrightMagenta,
 		"bg_bright_cyan": &BgBrightCyan, "bg_bright_white": &BgBrightWhite,
 	}
-
+	
 	// Populate codes from registry
 	for id, ansiCode := range codeMap {
 		if code, exists := registry.Codes[id]; exists {
@@ -176,9 +175,9 @@ func NewCursor() CursorStruct {
 	if registry == nil {
 		return CursorStruct{}
 	}
-
+	
 	c := CursorStruct{}
-
+	
 	// Map cursor codes
 	if code, exists := registry.Codes["cursor_up"]; exists {
 		c.Up = code.ToAnsiCode()
@@ -216,7 +215,7 @@ func NewCursor() CursorStruct {
 	if code, exists := registry.Codes["cursor_show"]; exists {
 		c.Show = code.ToAnsiCode()
 	}
-
+	
 	return c
 }
 
@@ -347,6 +346,4 @@ func SoftReset() AnsiCode {
 func init() {
 	// You can embed the JSON or load it from file here
 	// For now, codes will be initialized when InitFromJSON is called
-	jsonData, _ := os.ReadFile("AnsiCodes.json")
-	InitFromJSON(jsonData)
 }
