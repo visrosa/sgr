@@ -18,7 +18,7 @@ A Go package for working with all ANSI Escape Codes, not actually limited to jus
 - Struct-based Go API (currently; final interface TBD)
 - Methods for generating, applying, and rendering escape codes
 - Name and code number for over 100 control codes
-- Showcase methods (where it makes sense): returns a sample string where the relevant ANSI Code has been applied
+- Showcase methods (where it makes sense): returns a sample string where the relevant ANSI Code has been applied. Will use own command syntax notation as the showcase string in the future.
 - Helpers for color, font, cursor, and screen control
 
 
@@ -31,9 +31,7 @@ TextSize = struct {
 	Code   func() string
 	Render func() string // Render() is the showcase method. To be renamed.
 }{
-	Apply: func(meta ...string) string {  
-		return "\x1b\x5d66;" + string(meta[0]) + ";"
-	},
+	Apply: func(meta ...string) string { return "\x1b\x5d66;" + string(meta[0]) + ";" },
 	Off:  func() string { return "\x07" },
 	Name: func() string { return "Text Size (kitty)" },
 	Code: func() string { return "66" },
