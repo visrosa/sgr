@@ -75,6 +75,40 @@ var (
 		Show:     AnsiCode{"?25h", "ShowCursor", "DECTCEM", 0},
 	}
 
+	TextSize = struct {
+		// Apply  func(size, meta, text string) string
+		Apply  func(meta ...string) string
+		Off    func() string
+		Name   func() string
+		Code   func() string
+		Render func() string
+	}{
+		// Apply: func(size, meta, text string) string {
+		Apply: func(meta ...string) string {
+			// var s strings.Builder
+			// s.WriteString("")
+			// if len(meta) == 0 {
+			// return "\x1b\x5d66;s=" + size + ";" + text
+			// } else {
+			// return "\x1b\x5b66;s=" + size + ":" + meta + ";" + text
+			// }
+			return "\x1b\x5d66;" + string(meta[0]) + ";"
+		},
+		Off:  func() string { return "\x07" },
+		Name: func() string { return "Text Size (kitty)" },
+		Code: func() string { return "66" },
+		Render: func() string {
+			return "\x1b\x5d66;s=4;Size4\x07" +
+				"\x1b\x5d66;s=2:v=1; Size2\x07" + "\x1b\x5d66;s=1:v=1; Size1\x07" + "\x1b\x5d66;n=1:d=2:v=2:w=8; Size1/2\x07\n" +
+				"\x1b\x5d66;s=1:v=1; Size1\x07" + "\x1b\x5d66;n=1:d=2:v=2:w=8; Size1/2\x07\n" +
+				"\x1b\x5d66;s=2:v=0; Size2\x07" + "\x1b\x5d66;s=1:v=1; Size1 \x07" + "\x1b\x5d66;s=2:n=1:d=2:v=2:w=3;Size1 \x07\n" +
+				"\x1b\x5d66;s=1:v=1; Size1\x07 " // + "\x1b\x5d66;s=2:n=1:d=2:v=2; Size1\x07"
+
+			// a.Code + CSI(a.Code) + a.Abbr + string(a.Symbol) + a.Name + Reset.Apply()
+		}}
+
+	// AnsiCode{"66", "Text Sizing Protocol (kitty)", "", 0}	}
+
 	Bold = struct{ On, Off AnsiCode }{
 		On:  AnsiCode{"1", "Bold", "", 0},
 		Off: AnsiCode{"22", "ResetBold", "", 0},
@@ -112,15 +146,16 @@ var (
 		Off: AnsiCode{"29", "ResetStrike", "", 0},
 	}
 	DefaultFont      = AnsiCode{"10", "Default Font", "", 0}
-	AlternativeFont1 = AnsiCode{"11", "Default Font", "", 0}
-	AlternativeFont2 = AnsiCode{"12", "Default Font", "", 0}
-	AlternativeFont3 = AnsiCode{"13", "Default Font", "", 0}
-	AlternativeFont4 = AnsiCode{"14", "Default Font", "", 0}
-	AlternativeFont5 = AnsiCode{"15", "Default Font", "", 0}
-	AlternativeFont6 = AnsiCode{"16", "Default Font", "", 0}
-	AlternativeFont7 = AnsiCode{"17", "Default Font", "", 0}
-	AlternativeFont8 = AnsiCode{"18", "Default Font", "", 0}
-	AlternativeFont9 = AnsiCode{"19", "Default Font", "", 0}
+	AlternativeFont1 = AnsiCode{"11", "Alternative Font 1", "", 0}
+	AlternativeFont2 = AnsiCode{"12", "Alternative Font 2", "", 0}
+	AlternativeFont3 = AnsiCode{"13", "Alternative Font 3", "", 0}
+	AlternativeFont4 = AnsiCode{"14", "Alternative Font 4", "", 0}
+	AlternativeFont5 = AnsiCode{"15", "Alternative Font 5", "", 0}
+	AlternativeFont6 = AnsiCode{"16", "Alternative Font 6", "", 0}
+	AlternativeFont7 = AnsiCode{"17", "Alternative Font 7", "", 0}
+	AlternativeFont8 = AnsiCode{"18", "Alternative Font 8", "", 0}
+	AlternativeFont9 = AnsiCode{"19", "Alternative Font 9", "", 0}
+	GothicFont       = AnsiCode{"20", "Fraktur (Gothic)", "", 0}
 
 	FgBlack       = AnsiCode{"30", "FgBlack", "", 0}
 	FgRed         = AnsiCode{"31", "FgRed", "", 0}
@@ -142,8 +177,7 @@ var (
 	BgWhite       = AnsiCode{"47", "BgWhite", "", 0}
 	BgDefault     = AnsiCode{"49", "BgDefault", "", 0}
 	SetBackground = AnsiCode{"48", "SetBackground", "", 0}
-
-	TextSize = AnsiCode{"66", "Text Sizing Protocol (kitty)", "", 0}
+	//
 
 	// func(size any) string {
 	// if size == "off" {
